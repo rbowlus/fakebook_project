@@ -1,3 +1,4 @@
+from app.blueprints.blog.models import Post
 from app import db, login_manager
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
@@ -22,6 +23,10 @@ class User(UserMixin, db.Model):
         backref=db.backref('followers', lazy='dynamic'),
         lazy='dynamic'
     )
+
+    def own_posts(self):
+        own_post = Post.query.filter_by(user_id=self.id)
+        return own_post
 
     def followed_posts(self):
         from app.blueprints.blog.models import Post

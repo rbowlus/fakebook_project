@@ -13,6 +13,14 @@ def home():
     }
     return render_template('home.html', **context)
 
+@app.route('/', methods=['GET', 'POST'] )
+def create_post():
+    if request.method =='POST':
+        post =Post(body=request.form.get('body_text'), user_id=current_user.id)
+        db.session.add(post)
+        db.session.commit()
+        flash('You added a new post!', 'success')
+        return render_template('home.html')
 
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
@@ -28,7 +36,11 @@ def profile():
         db.session.commit()
         flash('Profile updated successfully', 'info')
         return redirect(url_for('main.profile'))
-    return render_template('profile.html')
+    context = {
+            'posts': current_user.own_posts()
+        }
+
+    return render_template('profile.html', **context)
         
 
 @app.route('/contact')
