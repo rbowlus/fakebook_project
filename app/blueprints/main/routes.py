@@ -1,39 +1,35 @@
-from flask import render_template, url_for, jsonify
 from .import bp as app
-
-posts = [
-    {
-        'id': 1,
-        'body': 'This is the first blog post.',
-        'author': 'Lucas L.',
-        'timestamp': '10-2-2020'
-        },
-    {
-        'id': 2,
-        'body': 'This is the second blog post.',
-        'author': 'Derek H.' ,
-        'timestamp': '10-3-2020'
-        },        
-    {
-        'id': 3,
-        'body': 'This is the third blog post.',
-        'author': 'Joel C.',
-        'timestamp': '10-4-2020'
-        }    
-    ]
+from flask import render_template, request, url_for, flash, redirect
+from flask_login import current_user
+from app import db
+from app.blueprints.authentication.models import User
+from app.blueprints.blog.models import Post
 
 
 @app.route('/')
 def home():
     context = {
-        'posts': posts
+        'posts': current_user.followed_posts() if current_user.is_authenticated else []
     }
     return render_template('home.html', **context)
 
-@app.route('/profile')
+
+@app.route('/profile', methods=['GET', 'POST'])
 def profile():
-    logged_in_user = 'Rachel'
-    return render_template('profile.html', u=logged_in_user)
+    if request.method == 'POST':
+        print(request.form.get('first_name'))
+        print(request.form.get('last_name'))
+        print(request.form.get('email'))
+
+        u = User.query.get(current_user.id)
+        u.first_name = request.form.get('first_name')
+        u.last_name = request.form.get('last_name')
+        u.email = request.form.get('email')
+        db.session.commit()
+        flash('Profile updated successfully', 'info')
+        return redirect(url_for('main.profile'))
+    return render_template('profile.html')
+        
 
 @app.route('/contact')
 def contact():

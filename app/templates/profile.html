@@ -2,7 +2,7 @@
 
 {% block content %}
 <h3>
-    Profile | Welcome {{ u }}
+    Profile | Welcome {{ current_user.email }}
 </h3>
 <hr />
 
@@ -11,23 +11,23 @@
         <img class="img-fluid" src="https://via.placeholder.com/1000x1500" alt="profile">
     </div>
     <div class="col-md">
-        <form action="">
+        <form action="{{ url_for('main.profile') }}" method="POST">
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <input type="text" class="form-control" placeholder="First Name" />
+                        <input type="text" class="form-control" placeholder="First Name" name="first_name" value="{{ current_user.first_name }}"/>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <input type="text" class="form-control" placeholder="Last Name" />
+                        <input type="text" class="form-control" placeholder="Last Name" name="last_name" value="{{ current_user.last_name }}"/>
                     </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-12">
                     <div class="form group">
-                        <input type="email" class="form-control" placeholder="example@email.com" />
+                        <input type="email" class="form-control" placeholder="example@email.com" name="email" value="{{ current_user.email }}" />
                     </div>
                 </div>
             </div>
