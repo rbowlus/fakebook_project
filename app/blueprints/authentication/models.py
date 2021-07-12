@@ -15,6 +15,8 @@ class User(UserMixin, db.Model):
     last_name = db.Column(db.String(50))
     email = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(200))
+    image = db.Column(db.String)
+    bio = db.Column(db.Text)
     posts = db.relationship('Post', backref='author', lazy ='dynamic')
     followed = db.relationship(
         'User', secondary=followers,
@@ -25,7 +27,7 @@ class User(UserMixin, db.Model):
     )
 
     def own_posts(self):
-        own_post = Post.query.filter_by(user_id=self.id)
+        own_post = Post.query.filter_by(user_id=self.id).order_by(Post.date_created.desc())
         return own_post
 
     def followed_posts(self):
