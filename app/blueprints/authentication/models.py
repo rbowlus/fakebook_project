@@ -1,7 +1,7 @@
-from app.blueprints.blog.models import Post
 from app import db, login_manager
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
+from app.blueprints.blog.models import Post
 
 followers = db.Table(
     'followers',
@@ -31,8 +31,6 @@ class User(UserMixin, db.Model):
         return own_post
 
     def followed_posts(self):
-        from app.blueprints.blog.models import Post
-
         #get posts for all users I'm following
         followed = Post.query.join(followers, (followers.c.followed_id == Post.user_id)).filter(followers.c.follower_id == self.id)
         
@@ -55,6 +53,7 @@ class User(UserMixin, db.Model):
     def unfollow(self, user):
         if self.is_following(user):
             self.followed.remove(user)
+            db.session.commit()
     
     def save(self):
         db.session.add(self)

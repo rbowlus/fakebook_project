@@ -2,7 +2,7 @@ from .import bp as app
 from app import db
 from flask import render_template, url_for, request, redirect, flash
 from .models import User
-from flask_login import login_user, logout_user
+from flask_login import login_user, logout_user, login_required
 
 from app.blueprints import authentication
 
@@ -29,10 +29,13 @@ def register():
     # print(request.form['email'])
     # print(request.form['password'])
     if request.method == 'POST':
-        user = User.query.filter_by(email=request.form.get('email')). first()
+        user = User.query.filter_by(email=request.form.get('email')).first()
+
+        #if they do
         if user is not None:
             flash('That user already exists. Try again.', 'danger')
             return redirect(url_for('authentication.register'))
+        #if password and confirm password fields don't match
         if request.form.get('password') != request.form.get('confirm_password'):
             flash('Your passwords do not match. Try again.', 'danger')
             return redirect(url_for('authentication.register'))
@@ -45,6 +48,7 @@ def register():
         u.save()
         flash('User registered successfully.', 'success')
         return redirect(url_for('authentication.login'))
+    #for the register route, start by grabbing the form data from a successful POST method and print from each input field
     return render_template('authentication/register.html')
     
 

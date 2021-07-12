@@ -12,7 +12,7 @@ def get_post(id):
     }
     return render_template('blog-single.html', **context)
 
-# # Derek functionality for creating post
+# Derek functionality for creating post
 # @app.route('/post/create', method=['POST'])
 # def create_post():
 #     Post(body=request.form.get('body'),user_id=current_user).save()

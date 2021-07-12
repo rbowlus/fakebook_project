@@ -1,11 +1,11 @@
-from werkzeug.utils import html
 from .import bp as app
-from flask import render_template, request, url_for, flash, redirect
+from flask import render_template, request, url_for, flash, redirect, current_app
 from flask_login import current_user, login_required
 from app import db, mail
+from flask_mail import Message
 from app.blueprints.authentication.models import User
 from app.blueprints.blog.models import Post
-from flask_mail import Message
+from werkzeug.utils import html
 
 
 @app.route('/')
@@ -24,7 +24,7 @@ def create_post():
         db.session.add(post)
         db.session.commit()
         flash('You added a new post!', 'success')
-        # return render_template('home.html')
+        return render_template('home.html')
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -35,16 +35,19 @@ def profile():
         # print(request.form.get('last_name'))
         # print(request.form.get('email'))
 
-        # u = User.query.get(current_user.id)
-        # u.first_name = request.form.get('first_name')
-        # u.last_name = request.form.get('last_name')
-        # u.email = request.form.get('email')
-        # db.session.commit()
+        u = User.query.get(current_user.id)
+        u.first_name = request.form.get('first_name')
+        u.last_name = request.form.get('last_name')
+        u.email = request.form.get('email')
+        u.bio = request.form.get('bio')
+        
+        db.session.commit()
         flash('Profile updated successfully', 'info')
         return redirect(url_for('main.profile'))
     context = {
             'posts': current_user.own_posts()
-            # 'posts': Post.query.filter_by(current_user=user.id)
+            # Derek functionality
+            # 'posts': Post.query.filter_by(user.id=current_user.id)order_by(Post.date_created.desc()).all()
         }
 
     return render_template('profile.html', **context)
@@ -55,7 +58,7 @@ def contact():
     if request.method == 'POST':
         form_data = {
             'email': request.form.get('email'),
-            'inquiry':request.form.get('inquiry'),
+            'inquiry': request.form.get('inquiry'),
             'message': request.form.get('message'),
         }
         msg = Message(
