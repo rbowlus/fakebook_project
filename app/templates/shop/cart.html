@@ -100,7 +100,7 @@
                 body: JSON.stringify({ 'message': 'This works' })
             })
                 .then(res => res.json())
-                .then(data => stripe.redirectToCheckout({ sessionId: data['session_id'] }))
+                .then(data => {console.log(data);stripe.redirectToCheckout({ sessionId: data['session_id'] })})
         })
     </script>
 {% endblock scripts %}

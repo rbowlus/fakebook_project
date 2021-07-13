@@ -1,18 +1,17 @@
+from time import strptime
 from flask.helpers import url_for
 from .import bp as app
 from flask import json, render_template, redirect, flash, request, session, current_app, jsonify
-from .models import Product, Cart
+from .models import Product, StripeProduct, Cart
 from flask_login import current_user
 import stripe 
 from app import db
-
-stripe.api_key = current_app.config.get('STRIPE_SECRET_KEY')
 
 @app.route("/")
 def index():
     """[GET] /shop"""
     context = {
-        'products': Product.query.all()
+        'products': StripeProduct.query.all()
     }
     return render_template('shop/index.html', **context)
 
@@ -40,10 +39,10 @@ def add_to_cart():
         return redirect(url_for('authentication.login'))
 
     #Make a new product
-    product = Product.query.get(request.args.get('id'))
+    product = StripeProduct.query.get(request.args.get('id'))
 
     #Save it to cart
-    Cart(user_id=current_user.id, product_id=product.id).save()
+    Cart(user_id=current_user.id, product_id=stripe_product_id).save()
     flash(f'You have added {product.name} to the cart', 'success')
     return redirect(url_for('shop.index'))
 
@@ -57,6 +56,9 @@ def shop_failure():
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
+    stripe.api_key = current_app.config.get('STRIPE_SECRET_KEY')
+    # print(stripe.Product.list())
+    print(stripe.Price.retrieve('price_1JCnVREmizeAi1IAUGTuAytT'))
     dc = session.get('session_display_cart')
 
     l_items = []
@@ -67,9 +69,9 @@ def checkout():
                     'product_data': {
                         'name': product['name'],
                         # Does product['image'] need to be in []?
-                        'image': product['image'],
+                        'images': [product['image']],
                     },
-                    ' unit_amount': int(float(product['price'])* 100),
+                    'unit_amount': int(float(product['price'])* 100),
                 },
                 'quantity': product['quantity'],
             }
@@ -92,3 +94,20 @@ def checkout():
         return jsonify({ 'session_id': checkout_session.id })
     except Exception as e:
         return jsonify(error=str(e)), 403
+
+@app.route('/seed')
+def seed_stripe_products():
+    stripe.api_key = current_app.config.get('STRIPE_SECRET_KEY')
+    
+    def seed_data():
+        list_to_store_in_db = []
+
+        for p in stripe.Product.list().get('data'):
+            list_to_store_in_db.append(StripeProduct(strip_product_id=p['id'], name=p['name'], image=p['images'][0], description=p['description'], price=int(float(p['metadata']['price'])*100), tax=int(float(p['metadata']['tax'])*100)))
+        
+        db.session.add_all(list_to_store_in_db)
+        db.session.commit()
+
+        seed_data()
+        return jsonify({ 'message': 'Success'})
+        

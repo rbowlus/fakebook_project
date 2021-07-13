@@ -1,6 +1,6 @@
 from flask_login import current_user
 from flask import current_app as app
-from app.blueprints.shop.models import Cart, Product
+from app.blueprints.shop.models import Cart, Product, StripeProduct
 from functools import reduce
 
 @app.context_processor
@@ -29,8 +29,8 @@ def build_cart():
                     'quantity': 1,
                     'name': p.name,
                     'description': p.description,
-                    'price': f'{p.price:,.2f}',
-                    'tax' : p.tax
+                    'price': p.price,
+                    'tax' : p.tax/100
                 }
             else:
                 cart_dict[str(p.id)]['quantity'] += 1
