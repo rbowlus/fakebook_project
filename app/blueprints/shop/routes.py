@@ -10,9 +10,11 @@ from app import db
 @app.route("/")
 def index():
     """[GET] /shop"""
+    stripe.api_key = current_app.config.get('STRIPE_SECRET_KEY')
     context = {
         'products': StripeProduct.query.all()
     }
+    print(StripeProduct.query.all())
     return render_template('shop/index.html', **context)
 
 @app.route('/cart')
@@ -33,16 +35,18 @@ def cart():
 
 @app.route('/cart/add')
 def add_to_cart():
-    """[GET] /shop/cart/add"""
+    """
+    [GET] /shop/cart/add
+    """
     if not current_user.is_authenticated:
-        flash('You must login to add items to cart' , 'warning')
+        flash('You must login to add items to your cart', 'warning')
         return redirect(url_for('authentication.login'))
 
-    #Make a new product
+    # Make a new product
     product = StripeProduct.query.get(request.args.get('id'))
 
-    #Save it to cart
-    Cart(user_id=current_user.id, product_id=stripe_product_id).save()
+    # Save it to their cart
+    Cart(user_id=current_user.id, product=product.stripe_product_id).save()
     flash(f'You have added {product.name} to the cart', 'success')
     return redirect(url_for('shop.index'))
 
@@ -71,7 +75,7 @@ def checkout():
                         # Does product['image'] need to be in []?
                         'images': [product['image']],
                     },
-                    'unit_amount': int(float(product['price'])* 100),
+                    'unit_amount': int(float(product['price'])),
                 },
                 'quantity': product['quantity'],
             }
@@ -103,11 +107,48 @@ def seed_stripe_products():
         list_to_store_in_db = []
 
         for p in stripe.Product.list().get('data'):
-            list_to_store_in_db.append(StripeProduct(strip_product_id=p['id'], name=p['name'], image=p['images'][0], description=p['description'], price=int(float(p['metadata']['price'])*100), tax=int(float(p['metadata']['tax'])*100)))
+            list_to_store_in_db.append(StripeProduct(stripe_product_id=p['id'], name=p['name'], image=p['images'][0], description=p['description'], price=int(float(p['metadata']['price'])*100), tax=int(float(p['metadata']['tax'])*100)))
         
         db.session.add_all(list_to_store_in_db)
         db.session.commit()
 
-        seed_data()
-        return jsonify({ 'message': 'Success'})
-        
+    seed_data()
+    return jsonify({ 'message': 'Success'})
+
+@app.route('/delete/<product_id>', methods=['DELETE', 'POST'])
+def delete_item(product_id):
+    if not current_user.is_authenticated:
+        flash('You must login to add items to your cart', 'warning')
+        return redirect(url_for('authentication.login'))
+
+    product = StripeProduct.query.get(product_id)
+    db.session.delete(Cart.query.filter_by(user_id=current_user.id, product=product.stripe_product_id).first())
+    db.session.commit()
+    flash(f'{product.name} has been removed from your cart.', 'success')
+    return redirect(url_for('shop.cart'))
+
+    # try:
+    #     for i in session['cart']:
+    #         if product['id'] == i['id']:
+    #             session['cart'].remove(i)
+    #             flash(f"You have removed {product.name}.", "info")
+    #             break
+    # except:
+    #     flash(f"{product.name} could not be removed", "warning")
+    # return redirect(url_for('shop.cart'))
+
+    # if 'Cart' not in session and len(session['Cart']) <= 0:
+    #     return redirect(url_for('home'))
+    # try:
+    #     session.modified = True
+    #     for key, item in session['Cart'].items():
+    #         if int(key) == id:
+    #             session['Cart'].pop(key, None)
+    #             return redirect(url_for('shop.cart'))
+    # except Exception as e:
+    #     print(e)
+    #     return redirect(url_for('shop.cart'))
+
+    # 
+    # StripeProduct.query.get(request.args.get('id'))
+    # db.session.delete(Cart.query.filter_by(product_id=request.args.get('id')).all())

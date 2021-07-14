@@ -20,9 +20,9 @@ def build_cart():
     if len(cart) > 0:
         # loop through the cart
         for cart_item in cart:
-            p = Product.query.get(cart_item.product_id)
-            if str(cart_item.product_id) not in cart_dict:
-                cart_dict[str(p.id)] = {
+            p =StripeProduct.query.filter_by(stripe_product_id=cart_item.product).first()
+            if cart_item.product not in cart_dict:
+                cart_dict[p.stripe_product_id] = {
                     'id': cart_item.id,
                     'product_id': p.id,
                     'image': p.image,
@@ -30,10 +30,10 @@ def build_cart():
                     'name': p.name,
                     'description': p.description,
                     'price': p.price,
-                    'tax' : p.tax/100
+                    'tax' : p.tax
                 }
             else:
-                cart_dict[str(p.id)]['quantity'] += 1
+                cart_dict[p.stripe_product_id]['quantity'] += 1
 
     def format_currency(price):
         return f'{price:,.2f}'
@@ -41,9 +41,9 @@ def build_cart():
     return {
             'cart_dict': cart_dict,
             'cart_size': len(cart),
-            'cart_subtotal': format_currency(reduce(lambda x,y:x+y, [i.to_dict()['product'].price for i in cart])) if cart else 0,
-            'cart_tax': format_currency(reduce(lambda x,y:x+y, [i.to_dict()['product'].tax for i in cart])) if cart else 0,
-            'cart_grandtotal': format_currency(reduce(lambda x,y:x+y, [i.to_dict()['product'].price + i.to_dict()['product'].tax for i in cart])) if cart else 0
+            'cart_subtotal': format_currency(float(reduce(lambda x,y:x+y, [i.to_dict()['product'].price for i in cart]))) if cart else 0,
+            'cart_tax': format_currency(float(reduce(lambda x,y:x+y, [i.to_dict()['product'].tax for i in cart]))) if cart else 0,
+            'cart_grandtotal': format_currency(float(reduce(lambda x,y:x+y, [i.to_dict()['product'].price + i.to_dict()['product'].tax for i in cart]))) if cart else 0
         }
 
 @app.context_processor
