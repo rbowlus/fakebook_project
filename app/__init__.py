@@ -35,6 +35,9 @@ def create_app(config_class=Config):
     from app.blueprints.authentication import bp as authentication
     app.register_blueprint(authentication)
 
+    from app.blueprints.api import bp as api
+    app.register_blueprint(api)
+
     with app.app_context():
         #building the rest of flask application (configurations, additional packages, etc)
         from app.blueprints.main import bp as main
